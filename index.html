@@ -94,31 +94,22 @@
 
     <button class="btn-action" id="flashBtn">⚡ FLASH VIA TYPE-C (BETAFLIGHT)</button>
 
-    <div id="terminal">Инициализация модулей...</div>
+    <div id="terminal">Готов к работе. Закройте Betaflight Configurator, подключите дрон по Type-C и нажмите кнопку.</div>
 </div>
 
 <script type="module">
-    let ESPLoader, Transport;
+    import { ESPLoader, Transport } from "https://unpkg.com/esptool-js/bundle.js";
+
+    let rawBinBuffer = null;
     const term = document.getElementById('terminal');
     const btn = document.getElementById('flashBtn');
     const fileInput = document.getElementById('fileInput');
-    let rawBinBuffer = null;
 
     function log(msg) {
         const d = new Date();
         const t = d.toTimeString().split(' ')[0];
         term.innerHTML += `[${t}] ${msg}\n`;
         term.scrollTop = term.scrollHeight;
-    }
-
-    // Загрузка esptool напрямую через ESM
-    try {
-        const mod = await import("https://esm.sh/esptool-js@0.4.3");
-        ESPLoader = mod.ESPLoader;
-        Transport = mod.Transport;
-        term.innerHTML = "Готов к работе. Подключите Type-C, закройте Betaflight Configurator и выберите прошивку.\n";
-    } catch (e) {
-        log("✖ Ошибка загрузки esptool-js модуля: " + e.message);
     }
 
     document.getElementById('chooseFileBtn').onclick = () => fileInput.click();
@@ -175,11 +166,6 @@
             return;
         }
 
-        if (!ESPLoader || !Transport) {
-            alert("Библиотека esptool еще загружается. Подождите несколько секунд.");
-            return;
-        }
-
         if (!rawBinBuffer) {
             alert("Сначала нажмите '+ выбрать свой .bin' и укажите файл прошивки!");
             fileInput.click();
@@ -189,20 +175,20 @@
         btn.disabled = true;
 
         try {
-            log("Запрос доступа к порту полётника (Type-C)...");
+            log("Запрос доступа к COM-порту полётника (Type-C)...");
             const port = await navigator.serial.requestPort();
 
-            // 1. Активация Betaflight CLI и моста
-            log("1. Вход в CLI полётного контроллера...");
+            // 1. Активация сквозного моста Betaflight CLI
+            log("1. Подключение к полётному контроллеру...");
             await port.open({ baudRate: 115200 });
 
             const writer = port.writable.getWriter();
             const encoder = new TextEncoder();
 
             await writer.write(encoder.encode("\r\n#\r\n"));
-            await new Promise(r => setTimeout(r, 250));
+            await new Promise(r => setTimeout(r, 200));
             await writer.write(encoder.encode("#\r\n"));
-            await new Promise(r => setTimeout(r, 250));
+            await new Promise(r => setTimeout(r, 200));
 
             const targetBaud = 420000;
             log(`2. Активация сквозного моста: serialpassthrough 0 ${targetBaud}...`);
@@ -223,7 +209,7 @@
             await new Promise(r => setTimeout(r, 300));
 
             // 2. Инициализация ESPLoader
-            log("4. Инициализация esptool...");
+            log("4. Инициализация esptool в браузере...");
             const phrase = document.getElementById('bindPhrase').value.trim();
             const finalBin = patchBin(rawBinBuffer, phrase);
 
@@ -232,35 +218,41 @@
                 binString += String.fromCharCode(finalBin[i]);
             }
 
-            const transport = new Transport(port);
-            transport.reset = async function() {}; // Отключаем дерганье DTR/RTS
+            const transport = new Transport(port, true);
+            transport.reset = async function() {}; // Отключаем аппаратный сброс полётника
 
-            const esploader = new ESPLoader(transport, targetBaud, {
-                log: (...args) => log(args.join(' ')),
-                debug: () => {},
-                error: (...args) => log(`[ОШИБКА] ${args.join(' ')}`)
+            const esploader = new ESPLoader({
+                transport: transport,
+                baudrate: targetBaud,
+                terminal: {
+                    clean: () => {},
+                    writeLine: (data) => log(data),
+                    write: (data) => log(data)
+                }
             });
 
-            log("5. Подключение к ESP32...");
-            await esploader.main_fn('no-reset');
+            log("5. Подключение к чипу приёмника...");
+            await esploader.main();
 
-            log("6. Запись прошивки (0x10000)...");
-            await esploader.write_flash({
+            log("6. Запись прошивки по адресу 0x10000...");
+            await esploader.writeFlash({
                 fileArray: [{ data: binString, address: 0x10000 }],
-                flash_size: 'keep',
-                erase_all: false,
+                flashSize: "keep",
+                flashMode: "dio",
+                flashFreq: "40m",
+                eraseAll: false,
                 compress: true,
                 reportProgress: (fileIndex, written, total) => {
                     const percent = Math.round((written / total) * 100);
-                    if (percent % 25 === 0) log(`Прогресс: ${percent}%`);
+                    if (percent % 25 === 0) log(`Прогресс записи: ${percent}%`);
                 }
             });
 
             log("✔ ПРОШИВКА УСПЕШНО ЗАВЕРШЕНА!");
-            alert(`Готово! Приёмник прошит с фразой '${phrase}'!`);
+            alert(`Успех! Приёмник прошит с фразой '${phrase}'!`);
 
         } catch (err) {
-            log(`✖ Сбой: ${err.message || err}`);
+            log(`✖ Ошибка: ${err.message || err}`);
             alert(`Ошибка: ${err.message || err}`);
         } finally {
             btn.disabled = false;
