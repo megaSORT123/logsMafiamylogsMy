@@ -4,158 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESCADRONE_RLS firmware generator</title>
-    <!-- Подключение esptool.js для работы с ESP32 прямо из браузера -->
-    <script src="https://unpkg.com/esptool-js@0.4.3/bundle.js"></script>
-    <!-- MD5 для вычисления Binding Phrase -->
+    <!-- Подключаем MD5 для расчета Binding Phrase -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-        body {
-            background-color: #1a1c1e;
-            color: #e2e8f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .card {
-            background-color: #242629;
-            width: 100%;
-            max-width: 600px;
-            border-radius: 12px;
-            padding: 28px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .btn-icon {
-            background: #2b2d30;
-            border: none;
-            color: #94a3b8;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .badge {
-            display: inline-block;
-            background: #1a1c1e;
-            color: #38bdf8;
-            font-weight: 700;
-            font-size: 11px;
-            padding: 4px 12px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-        .title-wrap {
-            text-align: center;
-            margin-bottom: 16px;
-        }
-        h1 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #f1f5f9;
-        }
-        .alert-box {
-            background: #2a2d32;
-            border: 1px solid #373a40;
-            border-radius: 8px;
-            padding: 12px 14px;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #94a3b8;
-            margin-bottom: 18px;
-        }
-        .form-group {
-            margin-bottom: 14px;
-        }
-        label {
-            display: block;
-            font-size: 12px;
-            color: #94a3b8;
-            margin-bottom: 6px;
-        }
-        select, input[type="text"] {
-            width: 100%;
-            background: #2b2d30;
-            border: 1px solid #3f4246;
-            color: #f1f5f9;
-            padding: 10px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            outline: none;
-        }
-        select:focus, input[type="text"]:focus {
-            border-color: #2563eb;
-        }
-        .row-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-        }
-        .row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .target-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .link-add {
-            color: #38bdf8;
-            font-size: 12px;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        .btn-action {
-            width: 100%;
-            background: #2563eb;
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 6px;
-        }
-        .btn-action:hover {
-            background: #1d4ed8;
-        }
-        .btn-action:disabled {
-            background: #475569;
-            cursor: not-allowed;
-        }
-        #terminal {
-            background: #181a1b;
-            color: #4ade80;
-            font-family: monospace;
-            font-size: 11px;
-            padding: 12px;
-            border-radius: 6px;
-            height: 160px;
-            overflow-y: auto;
-            margin-top: 14px;
-            white-space: pre-wrap;
-            border: 1px solid #2a2d32;
-        }
-        input[type="file"] {
-            display: none;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #1a1c1e; color: #e2e8f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .card { background-color: #242629; width: 100%; max-width: 580px; border-radius: 12px; padding: 26px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .btn-icon { background: #2b2d30; border: none; color: #94a3b8; padding: 6px 12px; border-radius: 6px; font-size: 15px; cursor: pointer; }
+        .title-wrap { text-align: center; margin-bottom: 14px; }
+        .badge { display: inline-block; background: #1a1c1e; color: #38bdf8; font-weight: 700; font-size: 11px; padding: 4px 12px; border-radius: 6px; margin-bottom: 8px; }
+        h1 { font-size: 19px; font-weight: 700; color: #f1f5f9; }
+        .alert-box { background: #2a2d32; border: 1px solid #373a40; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #94a3b8; margin-bottom: 16px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; }
+        select, input[type="text"] { width: 100%; background: #2b2d30; border: 1px solid #3f4246; color: #f1f5f9; padding: 9px 12px; border-radius: 6px; font-size: 13px; outline: none; }
+        select:focus, input[type="text"]:focus { border-color: #2563eb; }
+        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .target-header { display: flex; justify-content: space-between; align-items: center; }
+        .link-add { color: #38bdf8; font-size: 12px; text-decoration: underline; cursor: pointer; }
+        .btn-action { width: 100%; background: #2563eb; color: #fff; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+        .btn-action:hover { background: #1d4ed8; }
+        .btn-action:disabled { background: #475569; cursor: not-allowed; }
+        #terminal { background: #181a1b; color: #4ade80; font-family: monospace; font-size: 11px; padding: 12px; border-radius: 6px; height: 160px; overflow-y: auto; margin-top: 14px; white-space: pre-wrap; border: 1px solid #2a2d32; }
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
@@ -201,10 +74,10 @@
     <div class="form-group">
         <div class="target-header">
             <label>Target (.bin файл)</label>
-            <span class="link-add" onclick="document.getElementById('fileInput').click()">+ выбрать свой .bin</span>
+            <span class="link-add" id="chooseFileBtn">+ выбрать свой .bin</span>
         </div>
         <select id="targetSelect">
-            <option value="default">N24R_TD_D4_RX (ESP32 True Diversity)</option>
+            <option value="none">-- Нажмите "+ выбрать свой .bin" выше --</option>
         </select>
         <input type="file" id="fileInput" accept=".bin">
     </div>
@@ -220,24 +93,30 @@
         </div>
     </div>
 
-    <button class="btn-action" id="flashBtn" onclick="startTypeCFlash()">⚡ FLASH VIA TYPE-C (BETAFLIGHT)</button>
+    <button class="btn-action" id="flashBtn">⚡ FLASH VIA TYPE-C (BETAFLIGHT)</button>
 
-    <div id="terminal">Готов к работе. Подключите полётник по Type-C, закройте Betaflight Configurator и нажмите кнопку.</div>
+    <div id="terminal">Готов к работе. Закройте Betaflight Configurator, подключите дрон по Type-C и нажмите кнопку.</div>
 </div>
 
-<script>
+<script type="module">
+    // Правильный импорт ES-модулей esptool-js
+    import { ESPLoader, Transport } from "https://unpkg.com/esptool-js@0.5.4/bundle.js";
+
     let rawBinBuffer = null;
+    const term = document.getElementById('terminal');
+    const btn = document.getElementById('flashBtn');
+    const fileInput = document.getElementById('fileInput');
 
     function log(msg) {
-        const term = document.getElementById('terminal');
         const d = new Date();
         const t = d.toTimeString().split(' ')[0];
         term.innerHTML += `[${t}] ${msg}\n`;
         term.scrollTop = term.scrollHeight;
     }
 
-    // Выбор локального файла .bin
-    document.getElementById('fileInput').addEventListener('change', function(e) {
+    document.getElementById('chooseFileBtn').onclick = () => fileInput.click();
+
+    fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -245,17 +124,16 @@
         reader.onload = function(evt) {
             rawBinBuffer = new Uint8Array(evt.target.result);
             const select = document.getElementById('targetSelect');
+            select.innerHTML = '';
             const opt = document.createElement('option');
             opt.value = "custom";
-            opt.innerText = file.name;
+            opt.innerText = `${file.name} (${rawBinBuffer.length} байт)`;
             select.appendChild(opt);
-            select.value = "custom";
             log(`Загружен файл: ${file.name} (${rawBinBuffer.length} байт)`);
         };
         reader.readAsArrayBuffer(file);
     });
 
-    // Расчет UID привязки ExpressLRS (MD5)
     function getElrsUid(phrase) {
         if (!phrase) return [0, 0, 0, 0, 0, 0];
         const hash = CryptoJS.MD5(`-DMY_BINDING_PHRASE="${phrase}"`).toString();
@@ -266,7 +144,6 @@
         return uid;
     }
 
-    // Патчинг байт в памяти
     function patchBin(buffer, phrase) {
         const magic = [0xBE, 0xEF, 0xBA, 0xBE];
         let patched = new Uint8Array(buffer);
@@ -285,97 +162,102 @@
         return patched;
     }
 
-    async function startTypeCFlash() {
+    btn.onclick = async function() {
         if (!navigator.serial) {
-            alert("Ваш браузер не поддерживает Web Serial API! Откройте страницу через Google Chrome, Edge или Opera.");
+            alert("Ваш браузер не поддерживает Web Serial! Используйте Chrome, Edge или Opera на ПК.");
             return;
         }
 
         if (!rawBinBuffer) {
-            alert("Пожалуйста, сначала нажмите '+ выбрать свой .bin' и укажите файл прошивки!");
-            document.getElementById('fileInput').click();
+            alert("Сначала нажмите '+ выбрать свой .bin' и укажите файл прошивки!");
+            fileInput.click();
             return;
         }
 
-        const btn = document.getElementById('flashBtn');
         btn.disabled = true;
 
         try {
-            log("Запрос доступа к COM-порту Type-C...");
+            log("Запрос доступа к COM-порту полётника (Type-C)...");
             const port = await navigator.serial.requestPort();
-            
-            // 1. Подключаемся на 115200 к Betaflight CLI
-            log("1. Подключение к полётнику...");
+
+            // Шаг 1: вход в CLI Betaflight и активация Passthrough
+            log("1. Подключение к полётному контроллеру...");
             await port.open({ baudRate: 115200 });
 
             const writer = port.writable.getWriter();
             const encoder = new TextEncoder();
 
-            // Вход в CLI
             await writer.write(encoder.encode("\r\n#\r\n"));
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 200));
             await writer.write(encoder.encode("#\r\n"));
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 200));
 
-            // Активация serialpassthrough (UART1 / индекс 0)
-            log("2. Активация сквозного моста: serialpassthrough 0 115200");
+            // Активация сквозного моста
+            log("2. Запуск сквозного моста: serialpassthrough 0 115200");
             await writer.write(encoder.encode("serialpassthrough 0 115200\r\n"));
             await new Promise(r => setTimeout(r, 400));
 
-            // CRSF Bootloader пакеты сброса
-            log("3. Перевод приёмника в Bootloader...");
+            // CRSF Bootloader пакеты
+            log("3. Отправка команды CRSF Bootloader...");
             const crsfBoot = new Uint8Array([0xEC, 0x04, 0x32, 0x62, 0x6C, 0x0A]);
             await writer.write(crsfBoot);
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 50));
             await writer.write(crsfBoot);
+            await new Promise(r => setTimeout(r, 200));
 
             writer.releaseLock();
             await port.close();
-            await new Promise(r => setTimeout(r, 400));
+            await new Promise(r => setTimeout(r, 300));
 
-            // 2. Запуск esptool-js прямо в браузере
-            log("4. Инициализация esptool в браузере...");
+            // Шаг 2: прошивка через ESPLoader
+            log("4. Инициализация ESPLoader в браузере...");
             const phrase = document.getElementById('bindPhrase').value.trim();
             const finalBin = patchBin(rawBinBuffer, phrase);
 
-            // Преобразование байт в бинарную строку для esptool
             let binString = "";
             for (let i = 0; i < finalBin.length; i++) {
                 binString += String.fromCharCode(finalBin[i]);
             }
 
-            const transport = new esptooljs.Transport(port);
-            const esploader = new esptooljs.ESPLoader(transport, 115200, {
-                log: (...args) => log(args.join(' ')),
-                debug: () => {},
-                error: (...args) => log(`[ОШИБКА] ${args.join(' ')}`)
+            const transport = new Transport(port, true);
+            const esploader = new ESPLoader({
+                transport: transport,
+                baudrate: 115200,
+                romBaudrate: 115200,
+                terminal: {
+                    clean: () => {},
+                    writeLine: (data) => log(data),
+                    write: (data) => log(data)
+                }
             });
 
-            log("5. Соединение с ESP32...");
-            await esploader.main_fn();
+            log("5. Соединение с чипом приёмника...");
+            await esploader.main();
 
             log("6. Запись прошивки по адресу 0x10000...");
-            await esploader.write_flash({
+            await esploader.writeFlash({
                 fileArray: [{ data: binString, address: 0x10000 }],
-                flash_size: 'keep',
-                erase_all: false,
+                flashSize: "keep",
+                flashMode: "dio",
+                flashFreq: "40m",
+                eraseAll: false,
                 compress: true,
                 reportProgress: (fileIndex, written, total) => {
                     const percent = Math.round((written / total) * 100);
-                    if (percent % 20 === 0) log(`Запись: ${percent}%`);
+                    if (percent % 25 === 0) log(`Прогресс записи: ${percent}%`);
                 }
             });
 
             log("✔ ПРОШИВКА УСПЕШНО ЗАВЕРШЕНА!");
-            alert(`Готово! Приёмник прошит с фразой '${phrase}'!`);
+            alert(`Успех! Приёмник прошит с фразой '${phrase}'!`);
 
         } catch (err) {
-            log(`✖ Сбой: ${err.message || err}`);
+            log(`✖ Ошибка: ${err.message || err}`);
             alert(`Ошибка: ${err.message || err}`);
         } finally {
             btn.disabled = false;
         }
-    }
+    };
 </script>
 
 </body>
