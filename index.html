@@ -9,46 +9,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
-    
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #070b14;
-      color: #f1f5f9;
-    }
-
-    .mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* Кастомный скроллбар терминала */
-    ::-webkit-scrollbar {
-      width: 7px;
-      height: 7px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #080d1a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #1e293b;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #334155;
-    }
-
-    /* Эффекты свечения карточек */
-    .glow-idle {
-      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.6);
-    }
-    .glow-connected {
-      box-shadow: 0 0 25px rgba(14, 165, 233, 0.25), inset 0 0 15px rgba(14, 165, 233, 0.1);
-    }
-    .glow-ok {
-      box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), inset 0 0 15px rgba(16, 185, 129, 0.1);
-    }
-    .glow-fail {
-      box-shadow: 0 0 25px rgba(239, 68, 68, 0.25), inset 0 0 15px rgba(239, 68, 68, 0.1);
-    }
+    body { font-family: 'Inter', sans-serif; background-color: #070b14; color: #f1f5f9; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #080d1a; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    .glow-idle { box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.6); }
+    .glow-connected { box-shadow: 0 0 25px rgba(14, 165, 233, 0.25), inset 0 0 15px rgba(14, 165, 233, 0.1); }
+    .glow-flashing { box-shadow: 0 0 25px rgba(245, 158, 11, 0.3), inset 0 0 15px rgba(245, 158, 11, 0.15); }
+    .glow-ok { box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), inset 0 0 15px rgba(16, 185, 129, 0.1); }
+    .glow-fail { box-shadow: 0 0 25px rgba(239, 68, 68, 0.25), inset 0 0 15px rgba(239, 68, 68, 0.1); }
   </style>
 </head>
 <body class="min-h-screen flex flex-col p-3 sm:p-5 md:p-6 select-none bg-[#070b14]">
@@ -62,13 +33,13 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-lg md:text-xl font-bold tracking-tight text-white">MAFIA ELRS MONITOR</h1>
-          <span class="text-[11px] font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-md mono">10 PORTS ONLINE</span>
+          <span class="text-[11px] font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-md mono">1-CLICK FLASH</span>
         </div>
-        <p class="text-xs text-slate-400">Мониторинг портов (Python) + Результаты прошивки (vtx.in.ua)</p>
+        <p class="text-xs text-slate-400">Пакетная прошивка 10 приемников • Автоопределение COM</p>
       </div>
     </div>
 
-    <!-- Индикаторы и статистика -->
+    <!-- Индикаторы, выбор файла и кнопки действий -->
     <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-between lg:justify-end">
       <!-- Статус сокета Python -->
       <div class="flex items-center gap-2 bg-[#090e1b] border border-[#1b263e] px-3 py-2 rounded-xl text-xs mono">
@@ -76,293 +47,232 @@
         <span class="text-slate-300 font-medium">Python: <span id="py-status-text" class="text-slate-400">ПОИСК...</span></span>
       </div>
 
+      <!-- ВЫБОР ФАЙЛА ПРОШИВКИ -->
+      <input type="file" id="firmware-input" accept=".bin" class="hidden" onchange="handleFileSelect(event)">
+      <button onclick="document.getElementById('firmware-input').click()" class="px-3.5 py-2 bg-[#17233c] hover:bg-[#1f3052] text-sky-300 hover:text-white text-xs font-semibold rounded-xl border border-sky-500/30 transition flex items-center gap-2">
+        <i class="fa-solid fa-file-arrow-up text-sky-400"></i>
+        <span id="file-name-label">Выбрать файл .bin</span>
+      </button>
+
+      <!-- КНОПКА ПРОШИТЬ ВСЕ -->
+      <button onclick="flashAllDevices()" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white text-xs font-black rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.35)] transition flex items-center gap-2 active:scale-95">
+        <i class="fa-solid fa-bolt text-sm"></i> ПРОШИТЬ ВСЁ
+      </button>
+
       <!-- Счетчики -->
       <div class="flex items-center gap-2">
-        <div class="bg-[#090e1b] border border-[#1b263e] px-3 py-1.5 rounded-xl text-center min-w-[64px]">
-          <div class="text-[9px] text-slate-400 font-semibold uppercase">Ожидание</div>
+        <div class="bg-[#090e1b] border border-[#1b263e] px-2.5 py-1.5 rounded-xl text-center min-w-[55px]">
+          <div class="text-[9px] text-slate-400 font-semibold uppercase">Ждут</div>
           <div id="stat-idle" class="text-base font-extrabold text-slate-300 mono">10</div>
         </div>
-        <div class="bg-sky-950/40 border border-sky-700/50 px-3 py-1.5 rounded-xl text-center min-w-[64px]">
-          <div class="text-[9px] text-sky-400 font-semibold uppercase">Вставлен</div>
+        <div class="bg-sky-950/40 border border-sky-700/50 px-2.5 py-1.5 rounded-xl text-center min-w-[55px]">
+          <div class="text-[9px] text-sky-400 font-semibold uppercase">Есть</div>
           <div id="stat-conn" class="text-base font-extrabold text-sky-400 mono">0</div>
         </div>
-        <div class="bg-emerald-950/40 border border-emerald-700/50 px-3 py-1.5 rounded-xl text-center min-w-[64px]">
-          <div class="text-[9px] text-emerald-400 font-semibold uppercase">Зашито</div>
+        <div class="bg-emerald-950/40 border border-emerald-700/50 px-2.5 py-1.5 rounded-xl text-center min-w-[55px]">
+          <div class="text-[9px] text-emerald-400 font-semibold uppercase">ОК</div>
           <div id="stat-ok" class="text-base font-extrabold text-emerald-400 mono">0</div>
         </div>
-        <div class="bg-rose-950/40 border border-rose-700/50 px-3 py-1.5 rounded-xl text-center min-w-[64px]">
-          <div class="text-[9px] text-rose-400 font-semibold uppercase">Ошибки</div>
+        <div class="bg-rose-950/40 border border-rose-700/50 px-2.5 py-1.5 rounded-xl text-center min-w-[55px]">
+          <div class="text-[9px] text-rose-400 font-semibold uppercase">Сбой</div>
           <div id="stat-fail" class="text-base font-extrabold text-rose-400 mono">0</div>
         </div>
       </div>
 
-      <!-- Кнопка сброса -->
-      <button onclick="resetAllCables()" class="px-3.5 py-2 bg-[#142037] hover:bg-[#1a2c4e] text-slate-200 hover:text-white text-xs font-semibold rounded-xl border border-[#223559] transition flex items-center gap-2">
-        <i class="fa-solid fa-rotate-right text-amber-400"></i> Сброс
+      <!-- Сброс -->
+      <button onclick="resetAllCables()" class="px-3 py-2 bg-[#142037] hover:bg-[#1a2c4e] text-slate-300 hover:text-white text-xs font-medium rounded-xl border border-[#223559] transition">
+        <i class="fa-solid fa-rotate-right"></i>
       </button>
     </div>
   </header>
 
   <!-- СЕТКА ИЗ 10 ПОРТОВ (5 колонок x 2 ряда) -->
   <main class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-3.5 mb-5">
-    
-    <!-- КАРТОЧКА #1: COM3 -->
+    <!-- CABLE 1 -->
     <div id="card-1" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#1</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM3</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-1" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-1" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-1" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#1</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM3</span></div>
+      <div class="my-4 text-center"><div id="icon-1" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-1" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-1" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #2: COM13 -->
+    <!-- CABLE 2 -->
     <div id="card-2" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#2</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM13</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-2" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-2" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-2" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#2</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM13</span></div>
+      <div class="my-4 text-center"><div id="icon-2" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-2" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-2" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #3: COM10 -->
+    <!-- CABLE 3 -->
     <div id="card-3" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#3</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM10</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-3" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-3" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-3" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#3</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM10</span></div>
+      <div class="my-4 text-center"><div id="icon-3" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-3" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-3" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #4: COM11 -->
+    <!-- CABLE 4 -->
     <div id="card-4" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#4</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM11</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-4" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-4" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-4" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#4</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM11</span></div>
+      <div class="my-4 text-center"><div id="icon-4" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-4" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-4" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #5: COM6 -->
+    <!-- CABLE 5 -->
     <div id="card-5" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#5</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM6</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-5" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-5" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-5" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#5</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM6</span></div>
+      <div class="my-4 text-center"><div id="icon-5" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-5" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-5" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #6: COM7 -->
+    <!-- CABLE 6 -->
     <div id="card-6" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#6</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM7</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-6" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-6" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-6" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#6</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM7</span></div>
+      <div class="my-4 text-center"><div id="icon-6" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-6" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-6" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #7: COM9 -->
+    <!-- CABLE 7 -->
     <div id="card-7" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#7</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM9</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-7" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-7" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-7" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#7</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM9</span></div>
+      <div class="my-4 text-center"><div id="icon-7" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-7" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-7" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #8: COM12 -->
+    <!-- CABLE 8 -->
     <div id="card-8" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#8</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM12</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-8" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-8" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-8" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#8</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM12</span></div>
+      <div class="my-4 text-center"><div id="icon-8" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-8" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-8" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #9: COM8 -->
+    <!-- CABLE 9 -->
     <div id="card-9" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#9</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM8</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-9" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-9" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-9" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#9</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM8</span></div>
+      <div class="my-4 text-center"><div id="icon-9" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-9" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-9" class="text-slate-400">--:--:--</span></div>
     </div>
-
-    <!-- КАРТОЧКА #10: COM5 -->
+    <!-- CABLE 10 -->
     <div id="card-10" class="bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle">
-      <div class="flex justify-between items-start">
-        <span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#10</span>
-        <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM5</span>
-      </div>
-      <div class="my-4 text-center">
-        <div id="icon-10" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
-        <div id="status-10" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
-      </div>
-      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span><span id="time-10" class="text-slate-400">--:--:--</span>
-      </div>
+      <div class="flex justify-between items-start"><span class="text-xs font-black px-2 py-0.5 rounded-lg bg-[#142036] text-slate-300 mono border border-[#1f3152]">#10</span><span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM5</span></div>
+      <div class="my-4 text-center"><div id="icon-10" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div><div id="status-10" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div></div>
+      <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono"><span>Время:</span><span id="time-10" class="text-slate-400">--:--:--</span></div>
     </div>
-
   </main>
 
   <!-- КОНСОЛЬ / ТЕРМИНАЛ СОБЫТИЙ -->
   <section class="flex-1 bg-[#090f1d] border border-[#17233c] rounded-2xl p-4 flex flex-col shadow-2xl min-h-[260px] overflow-hidden">
-    
     <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#17233c] mb-3">
       <div class="flex items-center gap-2.5">
         <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-[#101b30] border border-[#1f3152] text-xs font-bold text-slate-200">
           <i class="fa-solid fa-terminal text-emerald-400"></i>
           <span>LIVE CONSOLE</span>
         </div>
-        <span class="text-xs text-slate-500 hidden sm:inline">• Автопрокрутка включена</span>
+        <span class="text-xs text-slate-500 hidden sm:inline">• Автопрокрутка активна</span>
       </div>
-
       <div class="flex items-center gap-2">
-        <button onclick="simulatePort(Math.floor(Math.random()*10)+1, 'CONNECTED')" class="px-2.5 py-1 bg-sky-950/60 hover:bg-sky-900/80 text-sky-400 text-xs font-semibold rounded-lg border border-sky-800/60 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-plug"></i> Тест Подкл
-        </button>
-        <button onclick="simulatePort(Math.floor(Math.random()*10)+1, 'OK')" class="px-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-800/60 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-check"></i> Тест OK
-        </button>
-        <button onclick="simulatePort(Math.floor(Math.random()*10)+1, 'FAIL')" class="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 text-xs font-semibold rounded-lg border border-rose-800/60 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-xmark"></i> Тест FAIL
-        </button>
         <button onclick="clearTerminal()" class="px-2.5 py-1 bg-[#142037] hover:bg-[#1a2c4e] text-slate-300 text-xs font-medium rounded-lg border border-[#223559] transition flex items-center gap-1.5">
           <i class="fa-solid fa-trash-can"></i> Очистить
         </button>
       </div>
     </div>
-
     <div id="terminal-logs" class="flex-1 overflow-y-auto space-y-1.5 mono text-[12px] leading-relaxed pr-2">
-      <div class="text-slate-500">// Монитор инициализирован. Ожидание сигналов...</div>
+      <div class="text-slate-500">// Система готова. Выберите .bin файл прошивки и нажмите «ПРОШИТЬ ВСЁ».</div>
     </div>
   </section>
 
-  <!-- ЛОГИКА ОБМЕНА И ОБНОВЛЕНИЯ -->
+  <!-- СКРИПТ ВЗАИМОДЕЙСТВИЯ -->
   <script>
-    const COM_MAP = {
-      1: 'COM3', 2: 'COM13', 3: 'COM10', 4: 'COM11', 5: 'COM6',
-      6: 'COM7', 7: 'COM9', 8: 'COM12', 9: 'COM8', 10: 'COM5'
-    };
-
+    const COM_MAP = { 1: 'COM3', 2: 'COM13', 3: 'COM10', 4: 'COM11', 5: 'COM6', 6: 'COM7', 7: 'COM9', 8: 'COM12', 9: 'COM8', 10: 'COM5' };
     const cableStates = {};
-    for (let i = 1; i <= 10; i++) {
-      cableStates[i] = { status: 'IDLE', time: '--:--:--' };
+    for (let i = 1; i <= 10; i++) cableStates[i] = { status: 'IDLE', time: '--:--:--' };
+
+    let pySocket = null;
+    let selectedFileBase64 = null;
+    let selectedFileName = "";
+
+    // 1. Выбор файла .bin в браузере
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.name.endsWith('.bin')) {
+        alert("Пожалуйста, выберите файл прошивки с расширением .bin!");
+        return;
+      }
+
+      selectedFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        // Конвертируем бинарник в base64 для передачи по сокету в Python
+        const binary = e.target.result;
+        selectedFileBase64 = btoa(
+          new Uint8Array(binary).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        document.getElementById('file-name-label').innerText = file.name.length > 20 ? file.name.substring(0, 17) + "..." : file.name;
+        logToTerminal(0, "INFO", `Выбран файл прошивки: ${file.name} (${(file.size / 1024).toFixed(1)} КБ)`);
+      };
+      reader.readAsArrayBuffer(file);
     }
 
-    // 1. ПРИЕМ ОТ TAMPERMONKEY (ГЛОБАЛЬНАЯ ТОЧКА ВХОДА)
-    window.applyStatus = function(cableNum, status, detail) {
-      handleDeviceEvent(parseInt(cableNum), status, detail, "VTX Web");
-    };
-
-    // Слушатель прямого BroadcastChannel
-    const localBus = new BroadcastChannel('mafia_elrs_channel');
-    localBus.onmessage = (event) => {
-      const data = event.data;
-      if (data && data.cable) {
-        window.applyStatus(data.cable, data.status, data.detail || '');
+    // 2. Отправка команды на прошивку всех плат
+    function flashAllDevices() {
+      if (!pySocket || pySocket.readyState !== WebSocket.OPEN) {
+        alert("Ошибка: Python-сервер не подключен! Запустите в терминале: py mafia_flasher.py");
+        return;
       }
-    };
 
-    // 2. ПРИЕМ ОТ PYTHON (WEBSOCKET НА 127.0.0.1:8765)
-    function initPythonSocket() {
+      if (!selectedFileBase64) {
+        alert("Сначала выберите .bin файл прошивки кнопкой «Выбрать файл .bin»!");
+        return;
+      }
+
+      // Отправляем файл и команду запуска
+      pySocket.send(JSON.stringify({
+        action: "FLASH_ALL",
+        fileName: selectedFileName,
+        fileData: selectedFileBase64
+      }));
+
+      logToTerminal(0, "SYSTEM", `⚡ Отправлен запрос на прошивку всех доступных портов файлом [${selectedFileName}]...`);
+    }
+
+    // 3. Подключение к локальному серверу Python
+    function connectPythonSocket() {
       const dot = document.getElementById("py-status-dot");
       const label = document.getElementById("py-status-text");
 
       try {
-        const ws = new WebSocket("ws://127.0.0.1:8765");
+        pySocket = new WebSocket("ws://127.0.0.1:8765");
 
-        ws.onopen = () => {
+        pySocket.onopen = () => {
           dot.className = "w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse";
           label.className = "text-sky-400";
           label.innerText = "ОНЛАЙН";
-          logToTerminal(0, "SYSTEM", "Локальный Python-монитор успешно подключен.");
+          logToTerminal(0, "SYSTEM", "Локальный Python-сервер подключен и готов к работе.");
         };
 
-        ws.onmessage = (event) => {
+        pySocket.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            if (data.cable) {
-              handleDeviceEvent(data.cable, data.status, data.detail, "Python Watcher");
+            if (data.cable !== undefined) {
+              handleDeviceEvent(data.cable, data.status, data.detail);
             }
-          } catch (e) {
-            console.error(e);
-          }
+          } catch (e) { console.error(e); }
         };
 
-        ws.onclose = () => {
+        pySocket.onclose = () => {
           dot.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
           label.className = "text-slate-400";
           label.innerText = "ОФФЛАЙН";
-          setTimeout(initPythonSocket, 2500); // автореконнект
+          setTimeout(connectPythonSocket, 2500);
         };
 
-        ws.onerror = () => {
-          ws.close();
-        };
+        pySocket.onerror = () => { pySocket.close(); };
       } catch (e) {
         dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
         label.className = "text-rose-400";
-        label.innerText = "ОШИБКА WS";
+        label.innerText = "ОШИБКА";
       }
     }
-    initPythonSocket();
+    connectPythonSocket();
 
-    // 3. ЕДИНАЯ ЛОГИКА ОБРАБОТКИ СОСТОЯНИЙ И ОТРИСОВКИ
-    function handleDeviceEvent(cableNum, status, detail, source) {
+    // 4. Отрисовка состояний плиток
+    function handleDeviceEvent(cableNum, status, detail) {
+      if (cableNum === 0) {
+        logToTerminal(0, status === "FAIL" ? "FAIL" : "SYSTEM", detail);
+        return;
+      }
       if (cableNum < 1 || cableNum > 10) return;
 
       const card = document.getElementById(`card-${cableNum}`);
@@ -375,46 +285,49 @@
       timeLabel.innerText = curTime;
 
       if (status === 'CONNECTED') {
-        // Кабель физически вставлен в USB
         card.className = "bg-[#0c1e34] border-2 border-sky-500 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-connected";
         icon.className = "text-4xl text-sky-400 mb-2 scale-110 transition-transform duration-300 animate-pulse";
         icon.innerHTML = '<i class="fa-solid fa-plug"></i>';
         statusLabel.className = "text-xs font-black text-sky-400 tracking-wider";
         statusLabel.innerText = "ПОДКЛЮЧЕН";
-        logToTerminal(cableNum, "INFO", detail || "Кабель обнаружен в системе");
+        logToTerminal(cableNum, "INFO", detail || "Кабель подключен");
       } 
+      else if (status === 'FLASHING') {
+        card.className = "bg-[#231e0c] border-2 border-amber-500 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-flashing";
+        icon.className = "text-4xl text-amber-400 mb-2 animate-spin";
+        icon.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i>';
+        statusLabel.className = "text-xs font-black text-amber-400 tracking-wider";
+        statusLabel.innerText = "ПРОШИВКА...";
+        logToTerminal(cableNum, "INFO", detail || "Идет запись прошивки...");
+      }
       else if (status === 'OK') {
-        // Прошивка завершена успешно
         card.className = "bg-[#081f19] border-2 border-emerald-500 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-ok";
         icon.className = "text-4xl text-emerald-400 mb-2 scale-110 transition-transform duration-300";
         icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
         statusLabel.className = "text-xs font-black text-emerald-400 tracking-wider";
         statusLabel.innerText = "ЗАШИТО";
-        logToTerminal(cableNum, "OK", detail || "Прошивку успішно завершено!");
+        logToTerminal(cableNum, "OK", detail || "Прошит успешно (100%)");
       } 
       else if (status === 'FAIL') {
-        // Ошибка при прошивке
         card.className = "bg-[#250d14] border-2 border-rose-500 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-fail";
         icon.className = "text-4xl text-rose-400 mb-2 scale-110 transition-transform duration-300";
         icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
         statusLabel.className = "text-xs font-black text-rose-400 tracking-wider";
         statusLabel.innerText = "ОШИБКА";
-        logToTerminal(cableNum, "FAIL", detail || "Помилка запису прошивки!");
+        logToTerminal(cableNum, "FAIL", detail || "Сбой при записи!");
       } 
       else if (status === 'IDLE') {
-        // Кабель вытащили
         card.className = "bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle";
         icon.className = "text-4xl text-slate-600 mb-2 transition-transform duration-300";
         icon.innerHTML = '<i class="fa-solid fa-circle-notch"></i>';
         statusLabel.className = "text-xs font-extrabold text-slate-400 tracking-wider";
         statusLabel.innerText = "ОЖИДАНИЕ";
-        logToTerminal(cableNum, "INFO", detail || "Кабель отключен");
+        logToTerminal(cableNum, "INFO", detail || "Порт отключен");
       }
 
       updateCounters();
     }
 
-    // 4. ТЕРМИНАЛ И СЧЕТЧИКИ
     function logToTerminal(cableNum, status, detail) {
       const term = document.getElementById('terminal-logs');
       const time = new Date().toLocaleTimeString();
@@ -422,13 +335,13 @@
       const portName = COM_MAP[cableNum] || 'SYS';
 
       if (cableNum === 0) {
-        div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-cyan-400 font-bold">[СИСТЕМА]</span> <span class="text-slate-300">${detail}</span>`;
+        div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-amber-400 font-bold">[СИСТЕМА]</span> <span class="text-slate-200">${detail}</span>`;
       } else if (status === 'OK') {
         div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-amber-400 font-bold">[#${cableNum} ${portName}]</span> <span class="text-emerald-400 font-bold">✔ УСПЕХ:</span> <span class="text-slate-300">${detail}</span>`;
       } else if (status === 'FAIL') {
         div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-amber-400 font-bold">[#${cableNum} ${portName}]</span> <span class="text-rose-400 font-bold">✖ СБОЙ:</span> <span class="text-slate-300">${detail}</span>`;
-      } else if (status === 'INFO') {
-        div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-amber-400 font-bold">[#${cableNum} ${portName}]</span> <span class="text-sky-400 font-bold">ℹ СТАТУС:</span> <span class="text-slate-300">${detail}</span>`;
+      } else {
+        div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-amber-400 font-bold">[#${cableNum} ${portName}]</span> <span class="text-sky-400 font-bold">ℹ ИНФО:</span> <span class="text-slate-300">${detail}</span>`;
       }
 
       term.appendChild(div);
@@ -436,7 +349,7 @@
     }
 
     function clearTerminal() {
-      document.getElementById('terminal-logs').innerHTML = `<div class="text-slate-500">// Журнал очищен пользователем.</div>`;
+      document.getElementById('terminal-logs').innerHTML = `<div class="text-slate-500">// Журнал очищен.</div>`;
     }
 
     function updateCounters() {
@@ -444,7 +357,7 @@
       for (let i = 1; i <= 10; i++) {
         if (cableStates[i].status === 'OK') ok++;
         else if (cableStates[i].status === 'FAIL') fail++;
-        else if (cableStates[i].status === 'CONNECTED') conn++;
+        else if (cableStates[i].status === 'CONNECTED' || cableStates[i].status === 'FLASHING') conn++;
         else idle++;
       }
       document.getElementById('stat-idle').innerText = idle;
@@ -456,29 +369,14 @@
     function resetAllCables() {
       for (let i = 1; i <= 10; i++) {
         cableStates[i] = { status: 'IDLE', time: '--:--:--' };
-        const card = document.getElementById(`card-${i}`);
-        const icon = document.getElementById(`icon-${i}`);
-        const statusLabel = document.getElementById(`status-${i}`);
-        const timeLabel = document.getElementById(`time-${i}`);
-
-        card.className = "bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle";
-        icon.className = "text-4xl text-slate-600 mb-2 transition-transform duration-300";
-        icon.innerHTML = '<i class="fa-solid fa-circle-notch"></i>';
-        statusLabel.className = "text-xs font-extrabold text-slate-400 tracking-wider";
-        statusLabel.innerText = "ОЖИДАНИЕ";
-        timeLabel.innerText = "--:--:--";
+        document.getElementById(`card-${i}`).className = "bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle";
+        document.getElementById(`icon-${i}`).className = "text-4xl text-slate-600 mb-2 transition-transform duration-300";
+        document.getElementById(`icon-${i}`).innerHTML = '<i class="fa-solid fa-circle-notch"></i>';
+        document.getElementById(`status-${i}`).className = "text-xs font-extrabold text-slate-400 tracking-wider";
+        document.getElementById(`status-${i}`).innerText = "ОЖИДАНИЕ";
+        document.getElementById(`time-${i}`).innerText = "--:--:--";
       }
       updateCounters();
-      logToTerminal(0, "SYSTEM", "Сброшены статусы всех 10 кабелей.");
-    }
-
-    function simulatePort(cableNum, status) {
-      let detail = '';
-      if (status === 'OK') detail = 'Hash of data verified. Hard resetting via RTS pin...';
-      else if (status === 'FAIL') detail = 'Failed to write to target: Timed out';
-      else if (status === 'CONNECTED') detail = `Кабель физически подключен к ${COM_MAP[cableNum]}`;
-      
-      handleDeviceEvent(cableNum, status, detail, "Симуляция");
     }
   </script>
 </body>
