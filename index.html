@@ -1,105 +1,3 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESCADRONE_RLS firmware generator</title>
-    <!-- Прямой сборщик esptool-js в глобальный window -->
-    <script src="https://cdn.jsdelivr.net/npm/esptool-js@0.4.3/bundle.js"></script>
-    <!-- MD5 для Binding Phrase -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: #1a1c1e; color: #e2e8f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .card { background-color: #242629; width: 100%; max-width: 580px; border-radius: 12px; padding: 26px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .btn-icon { background: #2b2d30; border: none; color: #94a3b8; padding: 6px 12px; border-radius: 6px; font-size: 15px; cursor: pointer; }
-        .title-wrap { text-align: center; margin-bottom: 14px; }
-        .badge { display: inline-block; background: #1a1c1e; color: #38bdf8; font-weight: 700; font-size: 11px; padding: 4px 12px; border-radius: 6px; margin-bottom: 8px; }
-        h1 { font-size: 19px; font-weight: 700; color: #f1f5f9; }
-        .alert-box { background: #2a2d32; border: 1px solid #373a40; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #94a3b8; margin-bottom: 16px; }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; }
-        select, input[type="text"] { width: 100%; background: #2b2d30; border: 1px solid #3f4246; color: #f1f5f9; padding: 9px 12px; border-radius: 6px; font-size: 13px; outline: none; }
-        select:focus, input[type="text"]:focus { border-color: #2563eb; }
-        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .target-header { display: flex; justify-content: space-between; align-items: center; }
-        .link-add { color: #38bdf8; font-size: 12px; text-decoration: underline; cursor: pointer; }
-        .btn-action { width: 100%; background: #2563eb; color: #fff; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
-        .btn-action:hover { background: #1d4ed8; }
-        .btn-action:disabled { background: #475569; cursor: not-allowed; }
-        #terminal { background: #181a1b; color: #4ade80; font-family: monospace; font-size: 11px; padding: 12px; border-radius: 6px; height: 160px; overflow-y: auto; margin-top: 14px; white-space: pre-wrap; border: 1px solid #2a2d32; }
-        input[type="file"] { display: none; }
-    </style>
-</head>
-<body>
-
-<div class="card">
-    <div class="header-top">
-        <button class="btn-icon">⌂</button>
-        <button class="btn-icon">☼</button>
-    </div>
-
-    <div class="title-wrap">
-        <span class="badge">⚡ ESCADRONE</span>
-        <h1>ESCADRONE_RLS firmware generator</h1>
-    </div>
-
-    <div class="alert-box">
-        ℹ ESCADRONE_RLS web-flasher. Работает прямо в браузере через Type-C. Никаких сторонних программ и Python!
-    </div>
-
-    <div class="form-group">
-        <label>Firmware</label>
-        <select>
-            <option>ESCADRONE_RLS 1.2.8</option>
-            <option>ESCADRONE_RLS 1.3.0</option>
-        </select>
-    </div>
-
-    <div class="form-group row-3">
-        <div>
-            <label>Device type</label>
-            <select><option>RX</option><option>TX</option></select>
-        </div>
-        <div>
-            <label>Frequency</label>
-            <select><option>2400 MHz</option><option>915 MHz</option></select>
-        </div>
-        <div>
-            <label>Brand</label>
-            <select><option>ESCADRONE targets</option><option>FPV Mafia targets</option></select>
-        </div>
-    </div>
-
-    <div class="form-group">
-        <div class="target-header">
-            <label>Target (.bin файл)</label>
-            <span class="link-add" id="chooseFileBtn">+ выбрать свой .bin</span>
-        </div>
-        <select id="targetSelect">
-            <option value="none">-- Нажмите "+ выбрать свой .bin" выше --</option>
-        </select>
-        <input type="file" id="fileInput" accept=".bin">
-    </div>
-
-    <div class="form-group row-2">
-        <div>
-            <label>Domain</label>
-            <select><option>ISM2G4</option><option>EU868</option></select>
-        </div>
-        <div>
-            <label>Custom binding phrase</label>
-            <input type="text" id="bindPhrase" value="yellow">
-        </div>
-    </div>
-
-    <button class="btn-action" id="flashBtn">⚡ FLASH VIA TYPE-C (BETAFLIGHT)</button>
-
-    <div id="terminal">Готов к работе. Закройте Betaflight Configurator, подключите дрон по Type-C и нажмите кнопку.</div>
-</div>
-
 <script>
     let rawBinBuffer = null;
     const term = document.getElementById('terminal');
@@ -165,13 +63,13 @@
 
     btn.onclick = async function() {
         if (!navigator.serial) {
-            alert("Ваш браузер не поддерживает Web Serial! Откройте сайт в Google Chrome, Edge или Opera.");
+            alert("Ваш браузер не поддерживает Web Serial! Используйте Chrome или Edge.");
             return;
         }
 
         const espLib = window.esptooljs || window.esptool;
         if (!espLib) {
-            alert("Ошибка загрузки библиотеки esptool. Проверьте соединение с интернетом.");
+            alert("Библиотека esptool еще загружается. Подождите пару секунд.");
             return;
         }
 
@@ -184,38 +82,43 @@
         btn.disabled = true;
 
         try {
-            log("Запрос доступа к COM-порту полётника (Type-C)...");
+            log("Запрос доступа к порту полётника (Type-C)...");
             const port = await navigator.serial.requestPort();
 
-            // 1. Активация сквозного режима Betaflight
-            log("1. Подключение к полётному контроллеру...");
+            // 1. Вход в Betaflight CLI на 115200
+            log("1. Вход в CLI полётного контроллера...");
             await port.open({ baudRate: 115200 });
 
             const writer = port.writable.getWriter();
             const encoder = new TextEncoder();
 
             await writer.write(encoder.encode("\r\n#\r\n"));
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 250));
             await writer.write(encoder.encode("#\r\n"));
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 250));
 
-            log("2. Запуск сквозного моста: serialpassthrough 0 115200");
-            await writer.write(encoder.encode("serialpassthrough 0 115200\r\n"));
+            // Активируем мост на порт приёмника
+            const targetBaud = 420000;
+            log(`2. Активация сквозного моста: serialpassthrough 0 ${targetBaud}...`);
+            await writer.write(encoder.encode(`serialpassthrough 0 ${targetBaud}\r\n`));
             await new Promise(r => setTimeout(r, 400));
 
-            log("3. Отправка команды CRSF Bootloader...");
+            // CRSF bootloader команды на рабочей скорости
+            log("3. Отправка команды перехода в Bootloader...");
             const crsfBoot = new Uint8Array([0xEC, 0x04, 0x32, 0x62, 0x6C, 0x0A]);
-            await writer.write(crsfBoot);
-            await new Promise(r => setTimeout(r, 50));
-            await writer.write(crsfBoot);
-            await new Promise(r => setTimeout(r, 200));
+            const crsfBootAlt = new Uint8Array([0xC8, 0x04, 0x32, 0x62, 0x6C, 0x22]);
+            for (let i = 0; i < 4; i++) {
+                await writer.write(crsfBoot);
+                await writer.write(crsfBootAlt);
+                await new Promise(r => setTimeout(r, 40));
+            }
 
             writer.releaseLock();
             await port.close();
             await new Promise(r => setTimeout(r, 300));
 
-            // 2. Инициализация esptool через глобальный объект
-            log("4. Инициализация ESPLoader...");
+            // 2. Инициализация ESPLoader БЕЗ сброса полётника (no-reset)
+            log("4. Инициализация esptool...");
             const phrase = document.getElementById('bindPhrase').value.trim();
             const finalBin = patchBin(rawBinBuffer, phrase);
 
@@ -225,16 +128,21 @@
             }
 
             const transport = new espLib.Transport(port);
-            const esploader = new espLib.ESPLoader(transport, 115200, {
+            
+            // Отключаем автоматический сброс DTR/RTS, чтобы не рвать passthrough
+            transport.reset = async function() {};
+
+            const esploader = new espLib.ESPLoader(transport, targetBaud, {
                 log: (...args) => log(args.join(' ')),
                 debug: () => {},
                 error: (...args) => log(`[ОШИБКА] ${args.join(' ')}`)
             });
 
-            log("5. Соединение с чипом ESP32...");
-            await esploader.main_fn();
+            log("5. Подключение к ESP32...");
+            // mode 'no-reset' предотвращает сброс контроллера
+            await esploader.main_fn('no-reset');
 
-            log("6. Запись прошивки по адресу 0x10000...");
+            log("6. Запись прошивки (0x10000)...");
             await esploader.write_flash({
                 fileArray: [{ data: binString, address: 0x10000 }],
                 flash_size: 'keep',
@@ -242,21 +150,18 @@
                 compress: true,
                 reportProgress: (fileIndex, written, total) => {
                     const percent = Math.round((written / total) * 100);
-                    if (percent % 25 === 0) log(`Прогресс записи: ${percent}%`);
+                    if (percent % 20 === 0) log(`Прогресс: ${percent}%`);
                 }
             });
 
             log("✔ ПРОШИВКА УСПЕШНО ЗАВЕРШЕНА!");
-            alert(`Успех! Приёмник прошит с фразой '${phrase}'!`);
+            alert(`Готово! Приёмник прошит с фразой '${phrase}'!`);
 
         } catch (err) {
-            log(`✖ Ошибка: ${err.message || err}`);
+            log(`✖ Сбой: ${err.message || err}`);
             alert(`Ошибка: ${err.message || err}`);
         } finally {
             btn.disabled = false;
         }
     };
 </script>
-
-</body>
-</html>
