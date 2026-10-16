@@ -12,7 +12,7 @@
     
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #080d19;
+      background-color: #070b14;
       color: #f1f5f9;
     }
 
@@ -36,9 +36,12 @@
       background: #334155;
     }
 
-    /* Эффект свечения карточек */
+    /* Эффекты свечения карточек */
     .glow-idle {
       box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.6);
+    }
+    .glow-connected {
+      box-shadow: 0 0 25px rgba(14, 165, 233, 0.25), inset 0 0 15px rgba(14, 165, 233, 0.1);
     }
     .glow-ok {
       box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), inset 0 0 15px rgba(16, 185, 129, 0.1);
@@ -61,29 +64,33 @@
           <h1 class="text-lg md:text-xl font-bold tracking-tight text-white">MAFIA ELRS MONITOR</h1>
           <span class="text-[11px] font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-md mono">10 PORTS ONLINE</span>
         </div>
-        <p class="text-xs text-slate-400">Прямой захват статусов прошивки RX 2.4G • vtx.in.ua</p>
+        <p class="text-xs text-slate-400">Мониторинг портов (Python) + Результаты прошивки (vtx.in.ua)</p>
       </div>
     </div>
 
     <!-- Индикаторы и статистика -->
     <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-between lg:justify-end">
-      <!-- Канал связи -->
+      <!-- Статус сокета Python -->
       <div class="flex items-center gap-2 bg-[#090e1b] border border-[#1b263e] px-3 py-2 rounded-xl text-xs mono">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-slate-300 font-medium">Шина TM: <span class="text-emerald-400">АКТИВНА</span></span>
+        <span id="py-status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+        <span class="text-slate-300 font-medium">Python: <span id="py-status-text" class="text-slate-400">ПОИСК...</span></span>
       </div>
 
       <!-- Счетчики -->
       <div class="flex items-center gap-2">
-        <div class="bg-[#090e1b] border border-[#1b263e] px-3 py-1.5 rounded-xl text-center min-w-[68px]">
+        <div class="bg-[#090e1b] border border-[#1b263e] px-3 py-1.5 rounded-xl text-center min-w-[64px]">
           <div class="text-[9px] text-slate-400 font-semibold uppercase">Ожидание</div>
           <div id="stat-idle" class="text-base font-extrabold text-slate-300 mono">10</div>
         </div>
-        <div class="bg-emerald-950/40 border border-emerald-700/50 px-3 py-1.5 rounded-xl text-center min-w-[68px]">
-          <div class="text-[9px] text-emerald-400 font-semibold uppercase">Успешно</div>
+        <div class="bg-sky-950/40 border border-sky-700/50 px-3 py-1.5 rounded-xl text-center min-w-[64px]">
+          <div class="text-[9px] text-sky-400 font-semibold uppercase">Вставлен</div>
+          <div id="stat-conn" class="text-base font-extrabold text-sky-400 mono">0</div>
+        </div>
+        <div class="bg-emerald-950/40 border border-emerald-700/50 px-3 py-1.5 rounded-xl text-center min-w-[64px]">
+          <div class="text-[9px] text-emerald-400 font-semibold uppercase">Зашито</div>
           <div id="stat-ok" class="text-base font-extrabold text-emerald-400 mono">0</div>
         </div>
-        <div class="bg-rose-950/40 border border-rose-700/50 px-3 py-1.5 rounded-xl text-center min-w-[68px]">
+        <div class="bg-rose-950/40 border border-rose-700/50 px-3 py-1.5 rounded-xl text-center min-w-[64px]">
           <div class="text-[9px] text-rose-400 font-semibold uppercase">Ошибки</div>
           <div id="stat-fail" class="text-base font-extrabold text-rose-400 mono">0</div>
         </div>
@@ -91,12 +98,12 @@
 
       <!-- Кнопка сброса -->
       <button onclick="resetAllCables()" class="px-3.5 py-2 bg-[#142037] hover:bg-[#1a2c4e] text-slate-200 hover:text-white text-xs font-semibold rounded-xl border border-[#223559] transition flex items-center gap-2">
-        <i class="fa-solid fa-rotate-right text-amber-400"></i> Сбросить всё
+        <i class="fa-solid fa-rotate-right text-amber-400"></i> Сброс
       </button>
     </div>
   </header>
 
-  <!-- СЕТКА ИЗ 10 ПОРТОВ (Ровно 5 колонок x 2 ряда) -->
+  <!-- СЕТКА ИЗ 10 ПОРТОВ (5 колонок x 2 ряда) -->
   <main class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-3.5 mb-5">
     
     <!-- КАРТОЧКА #1: COM3 -->
@@ -106,14 +113,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM3</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-1" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-1" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-1" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-1" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-1" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -124,14 +128,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM13</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-2" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-2" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-2" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-2" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-2" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -142,14 +143,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM10</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-3" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-3" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-3" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-3" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-3" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -160,14 +158,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM11</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-4" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-4" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-4" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-4" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-4" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -178,14 +173,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM6</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-5" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-5" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-5" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-5" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-5" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -196,14 +188,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM7</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-6" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-6" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-6" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-6" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-6" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -214,14 +203,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM9</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-7" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-7" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-7" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-7" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-7" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -232,14 +218,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM12</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-8" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-8" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-8" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-8" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-8" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -250,14 +233,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM8</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-9" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-9" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-9" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-9" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-9" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -268,14 +248,11 @@
         <span class="text-xs font-bold text-amber-400 mono bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/25">COM5</span>
       </div>
       <div class="my-4 text-center">
-        <div id="icon-10" class="text-4xl text-slate-600 mb-2 transition-transform duration-300">
-          <i class="fa-solid fa-circle-notch"></i>
-        </div>
+        <div id="icon-10" class="text-4xl text-slate-600 mb-2 transition-transform duration-300"><i class="fa-solid fa-circle-notch"></i></div>
         <div id="status-10" class="text-xs font-extrabold text-slate-400 tracking-wider">ОЖИДАНИЕ</div>
       </div>
       <div class="text-[11px] text-slate-500 border-t border-[#16233a] pt-2.5 flex justify-between mono">
-        <span>Время:</span>
-        <span id="time-10" class="text-slate-400">--:--:--</span>
+        <span>Время:</span><span id="time-10" class="text-slate-400">--:--:--</span>
       </div>
     </div>
 
@@ -284,7 +261,6 @@
   <!-- КОНСОЛЬ / ТЕРМИНАЛ СОБЫТИЙ -->
   <section class="flex-1 bg-[#090f1d] border border-[#17233c] rounded-2xl p-4 flex flex-col shadow-2xl min-h-[260px] overflow-hidden">
     
-    <!-- Шапка консоли -->
     <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#17233c] mb-3">
       <div class="flex items-center gap-2.5">
         <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-[#101b30] border border-[#1f3152] text-xs font-bold text-slate-200">
@@ -294,9 +270,10 @@
         <span class="text-xs text-slate-500 hidden sm:inline">• Автопрокрутка включена</span>
       </div>
 
-      <!-- Действия с терминалом -->
       <div class="flex items-center gap-2">
-        <!-- Кнопки симуляции для проверки без физического приёмника -->
+        <button onclick="simulatePort(Math.floor(Math.random()*10)+1, 'CONNECTED')" class="px-2.5 py-1 bg-sky-950/60 hover:bg-sky-900/80 text-sky-400 text-xs font-semibold rounded-lg border border-sky-800/60 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plug"></i> Тест Подкл
+        </button>
         <button onclick="simulatePort(Math.floor(Math.random()*10)+1, 'OK')" class="px-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-800/60 transition flex items-center gap-1.5">
           <i class="fa-solid fa-check"></i> Тест OK
         </button>
@@ -309,57 +286,83 @@
       </div>
     </div>
 
-    <!-- Текстовое поле логов -->
     <div id="terminal-logs" class="flex-1 overflow-y-auto space-y-1.5 mono text-[12px] leading-relaxed pr-2">
-      <div class="text-slate-500">// Монитор инициализирован. Ожидание событий прошивки с вкладок vtx.in.ua...</div>
+      <div class="text-slate-500">// Монитор инициализирован. Ожидание сигналов...</div>
     </div>
   </section>
 
   <!-- ЛОГИКА ОБМЕНА И ОБНОВЛЕНИЯ -->
   <script>
-    // Маппинг портов
     const COM_MAP = {
-      1: 'COM3',
-      2: 'COM13',
-      3: 'COM10',
-      4: 'COM11',
-      5: 'COM6',
-      6: 'COM7',
-      7: 'COM9',
-      8: 'COM12',
-      9: 'COM8',
-      10: 'COM5'
+      1: 'COM3', 2: 'COM13', 3: 'COM10', 4: 'COM11', 5: 'COM6',
+      6: 'COM7', 7: 'COM9', 8: 'COM12', 9: 'COM8', 10: 'COM5'
     };
 
-    // Хранилище текущих состояний
     const cableStates = {};
     for (let i = 1; i <= 10; i++) {
       cableStates[i] = { status: 'IDLE', time: '--:--:--' };
     }
 
-    // 1. Приемник через BroadcastChannel
+    // 1. ПРИЕМ ОТ TAMPERMONKEY (ГЛОБАЛЬНАЯ ТОЧКА ВХОДА)
+    window.applyStatus = function(cableNum, status, detail) {
+      handleDeviceEvent(parseInt(cableNum), status, detail, "VTX Web");
+    };
+
+    // Слушатель прямого BroadcastChannel
     const localBus = new BroadcastChannel('mafia_elrs_channel');
     localBus.onmessage = (event) => {
       const data = event.data;
       if (data && data.cable) {
-        window.applyStatus(parseInt(data.cable), data.status, data.detail || '');
+        window.applyStatus(data.cable, data.status, data.detail || '');
       }
     };
 
-    // 2. Приемник через localStorage (на случай кросс-вкладок)
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'mafia_last_log' && e.newValue) {
-        try {
-          const payload = JSON.parse(e.newValue);
-          if (payload && payload.cable) {
-            window.applyStatus(parseInt(payload.cable), payload.status, payload.detail || '');
-          }
-        } catch (err) {}
-      }
-    });
+    // 2. ПРИЕМ ОТ PYTHON (WEBSOCKET НА 127.0.0.1:8765)
+    function initPythonSocket() {
+      const dot = document.getElementById("py-status-dot");
+      const label = document.getElementById("py-status-text");
 
-    // 3. Главная функция обновления статуса порта
-    window.applyStatus = function(cableNum, status, detail) {
+      try {
+        const ws = new WebSocket("ws://127.0.0.1:8765");
+
+        ws.onopen = () => {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse";
+          label.className = "text-sky-400";
+          label.innerText = "ОНЛАЙН";
+          logToTerminal(0, "SYSTEM", "Локальный Python-монитор успешно подключен.");
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.cable) {
+              handleDeviceEvent(data.cable, data.status, data.detail, "Python Watcher");
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        };
+
+        ws.onclose = () => {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+          label.className = "text-slate-400";
+          label.innerText = "ОФФЛАЙН";
+          setTimeout(initPythonSocket, 2500); // автореконнект
+        };
+
+        ws.onerror = () => {
+          ws.close();
+        };
+      } catch (e) {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+        label.className = "text-rose-400";
+        label.innerText = "ОШИБКА WS";
+      }
+    }
+    initPythonSocket();
+
+    // 3. ЕДИНАЯ ЛОГИКА ОБРАБОТКИ СОСТОЯНИЙ И ОТРИСОВКИ
+    function handleDeviceEvent(cableNum, status, detail, source) {
       if (cableNum < 1 || cableNum > 10) return;
 
       const card = document.getElementById(`card-${cableNum}`);
@@ -371,38 +374,61 @@
       cableStates[cableNum] = { status, time: curTime };
       timeLabel.innerText = curTime;
 
-      if (status === 'OK') {
-        // Зеленая карточка
+      if (status === 'CONNECTED') {
+        // Кабель физически вставлен в USB
+        card.className = "bg-[#0c1e34] border-2 border-sky-500 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-connected";
+        icon.className = "text-4xl text-sky-400 mb-2 scale-110 transition-transform duration-300 animate-pulse";
+        icon.innerHTML = '<i class="fa-solid fa-plug"></i>';
+        statusLabel.className = "text-xs font-black text-sky-400 tracking-wider";
+        statusLabel.innerText = "ПОДКЛЮЧЕН";
+        logToTerminal(cableNum, "INFO", detail || "Кабель обнаружен в системе");
+      } 
+      else if (status === 'OK') {
+        // Прошивка завершена успешно
         card.className = "bg-[#081f19] border-2 border-emerald-500 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-ok";
         icon.className = "text-4xl text-emerald-400 mb-2 scale-110 transition-transform duration-300";
         icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
         statusLabel.className = "text-xs font-black text-emerald-400 tracking-wider";
-        statusLabel.innerText = "ПРОШИТ УСПЕШНО";
+        statusLabel.innerText = "ЗАШИТО";
         logToTerminal(cableNum, "OK", detail || "Прошивку успішно завершено!");
-      } else if (status === 'FAIL') {
-        // Красная карточка
+      } 
+      else if (status === 'FAIL') {
+        // Ошибка при прошивке
         card.className = "bg-[#250d14] border-2 border-rose-500 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-fail";
         icon.className = "text-4xl text-rose-400 mb-2 scale-110 transition-transform duration-300";
         icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
         statusLabel.className = "text-xs font-black text-rose-400 tracking-wider";
-        statusLabel.innerText = "ОШИБКА ЗАПИСИ";
+        statusLabel.innerText = "ОШИБКА";
         logToTerminal(cableNum, "FAIL", detail || "Помилка запису прошивки!");
+      } 
+      else if (status === 'IDLE') {
+        // Кабель вытащили
+        card.className = "bg-[#0c1322] border-2 border-[#19253d] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 relative glow-idle";
+        icon.className = "text-4xl text-slate-600 mb-2 transition-transform duration-300";
+        icon.innerHTML = '<i class="fa-solid fa-circle-notch"></i>';
+        statusLabel.className = "text-xs font-extrabold text-slate-400 tracking-wider";
+        statusLabel.innerText = "ОЖИДАНИЕ";
+        logToTerminal(cableNum, "INFO", detail || "Кабель отключен");
       }
 
       updateCounters();
-    };
+    }
 
-    // Запись в терминал
+    // 4. ТЕРМИНАЛ И СЧЕТЧИКИ
     function logToTerminal(cableNum, status, detail) {
       const term = document.getElementById('terminal-logs');
       const time = new Date().toLocaleTimeString();
       const div = document.createElement('div');
-      const portName = COM_MAP[cableNum] || 'COM?';
+      const portName = COM_MAP[cableNum] || 'SYS';
 
-      if (status === 'OK') {
+      if (cableNum === 0) {
+        div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-cyan-400 font-bold">[СИСТЕМА]</span> <span class="text-slate-300">${detail}</span>`;
+      } else if (status === 'OK') {
         div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-amber-400 font-bold">[#${cableNum} ${portName}]</span> <span class="text-emerald-400 font-bold">✔ УСПЕХ:</span> <span class="text-slate-300">${detail}</span>`;
-      } else {
+      } else if (status === 'FAIL') {
         div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-amber-400 font-bold">[#${cableNum} ${portName}]</span> <span class="text-rose-400 font-bold">✖ СБОЙ:</span> <span class="text-slate-300">${detail}</span>`;
+      } else if (status === 'INFO') {
+        div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-amber-400 font-bold">[#${cableNum} ${portName}]</span> <span class="text-sky-400 font-bold">ℹ СТАТУС:</span> <span class="text-slate-300">${detail}</span>`;
       }
 
       term.appendChild(div);
@@ -414,13 +440,15 @@
     }
 
     function updateCounters() {
-      let idle = 0, ok = 0, fail = 0;
+      let idle = 0, conn = 0, ok = 0, fail = 0;
       for (let i = 1; i <= 10; i++) {
         if (cableStates[i].status === 'OK') ok++;
         else if (cableStates[i].status === 'FAIL') fail++;
+        else if (cableStates[i].status === 'CONNECTED') conn++;
         else idle++;
       }
       document.getElementById('stat-idle').innerText = idle;
+      document.getElementById('stat-conn').innerText = conn;
       document.getElementById('stat-ok').innerText = ok;
       document.getElementById('stat-fail').innerText = fail;
     }
@@ -441,18 +469,16 @@
         timeLabel.innerText = "--:--:--";
       }
       updateCounters();
-      const term = document.getElementById('terminal-logs');
-      const time = new Date().toLocaleTimeString();
-      const div = document.createElement('div');
-      div.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="text-cyan-400 font-bold">[СИСТЕМА]</span> <span class="text-slate-300">Сброшены статусы всех 10 кабелей.</span>`;
-      term.appendChild(div);
-      term.scrollTop = term.scrollHeight;
+      logToTerminal(0, "SYSTEM", "Сброшены статусы всех 10 кабелей.");
     }
 
-    // Симуляция для тестирования
     function simulatePort(cableNum, status) {
-      const detail = status === 'OK' ? 'Hash of data verified. Hard resetting via RTS pin...' : 'Failed to write to target: Timed out';
-      window.applyStatus(cableNum, status, detail);
+      let detail = '';
+      if (status === 'OK') detail = 'Hash of data verified. Hard resetting via RTS pin...';
+      else if (status === 'FAIL') detail = 'Failed to write to target: Timed out';
+      else if (status === 'CONNECTED') detail = `Кабель физически подключен к ${COM_MAP[cableNum]}`;
+      
+      handleDeviceEvent(cableNum, status, detail, "Симуляция");
     }
   </script>
 </body>
