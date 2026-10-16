@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESCADRONE_RLS firmware generator</title>
-    <!-- Подключаем MD5 для расчета Binding Phrase -->
+    <!-- Прямой сборщик esptool-js в глобальный window -->
+    <script src="https://cdn.jsdelivr.net/npm/esptool-js@0.4.3/bundle.js"></script>
+    <!-- MD5 для Binding Phrase -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -98,10 +100,7 @@
     <div id="terminal">Готов к работе. Закройте Betaflight Configurator, подключите дрон по Type-C и нажмите кнопку.</div>
 </div>
 
-<script type="module">
-    // Правильный импорт ES-модулей esptool-js
-    import { ESPLoader, Transport } from "https://unpkg.com/esptool-js@0.5.4/bundle.js";
-
+<script>
     let rawBinBuffer = null;
     const term = document.getElementById('terminal');
     const btn = document.getElementById('flashBtn');
@@ -114,7 +113,9 @@
         term.scrollTop = term.scrollHeight;
     }
 
-    document.getElementById('chooseFileBtn').onclick = () => fileInput.click();
+    document.getElementById('chooseFileBtn').onclick = function() {
+        fileInput.click();
+    };
 
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -164,7 +165,13 @@
 
     btn.onclick = async function() {
         if (!navigator.serial) {
-            alert("Ваш браузер не поддерживает Web Serial! Используйте Chrome, Edge или Opera на ПК.");
+            alert("Ваш браузер не поддерживает Web Serial! Откройте сайт в Google Chrome, Edge или Opera.");
+            return;
+        }
+
+        const espLib = window.esptooljs || window.esptool;
+        if (!espLib) {
+            alert("Ошибка загрузки библиотеки esptool. Проверьте соединение с интернетом.");
             return;
         }
 
@@ -180,7 +187,7 @@
             log("Запрос доступа к COM-порту полётника (Type-C)...");
             const port = await navigator.serial.requestPort();
 
-            // Шаг 1: вход в CLI Betaflight и активация Passthrough
+            // 1. Активация сквозного режима Betaflight
             log("1. Подключение к полётному контроллеру...");
             await port.open({ baudRate: 115200 });
 
@@ -192,12 +199,10 @@
             await writer.write(encoder.encode("#\r\n"));
             await new Promise(r => setTimeout(r, 200));
 
-            // Активация сквозного моста
             log("2. Запуск сквозного моста: serialpassthrough 0 115200");
             await writer.write(encoder.encode("serialpassthrough 0 115200\r\n"));
             await new Promise(r => setTimeout(r, 400));
 
-            // CRSF Bootloader пакеты
             log("3. Отправка команды CRSF Bootloader...");
             const crsfBoot = new Uint8Array([0xEC, 0x04, 0x32, 0x62, 0x6C, 0x0A]);
             await writer.write(crsfBoot);
@@ -209,8 +214,8 @@
             await port.close();
             await new Promise(r => setTimeout(r, 300));
 
-            // Шаг 2: прошивка через ESPLoader
-            log("4. Инициализация ESPLoader в браузере...");
+            // 2. Инициализация esptool через глобальный объект
+            log("4. Инициализация ESPLoader...");
             const phrase = document.getElementById('bindPhrase').value.trim();
             const finalBin = patchBin(rawBinBuffer, phrase);
 
@@ -219,28 +224,21 @@
                 binString += String.fromCharCode(finalBin[i]);
             }
 
-            const transport = new Transport(port, true);
-            const esploader = new ESPLoader({
-                transport: transport,
-                baudrate: 115200,
-                romBaudrate: 115200,
-                terminal: {
-                    clean: () => {},
-                    writeLine: (data) => log(data),
-                    write: (data) => log(data)
-                }
+            const transport = new espLib.Transport(port);
+            const esploader = new espLib.ESPLoader(transport, 115200, {
+                log: (...args) => log(args.join(' ')),
+                debug: () => {},
+                error: (...args) => log(`[ОШИБКА] ${args.join(' ')}`)
             });
 
-            log("5. Соединение с чипом приёмника...");
-            await esploader.main();
+            log("5. Соединение с чипом ESP32...");
+            await esploader.main_fn();
 
             log("6. Запись прошивки по адресу 0x10000...");
-            await esploader.writeFlash({
+            await esploader.write_flash({
                 fileArray: [{ data: binString, address: 0x10000 }],
-                flashSize: "keep",
-                flashMode: "dio",
-                flashFreq: "40m",
-                eraseAll: false,
+                flash_size: 'keep',
+                erase_all: false,
                 compress: true,
                 reportProgress: (fileIndex, written, total) => {
                     const percent = Math.round((written / total) * 100);
